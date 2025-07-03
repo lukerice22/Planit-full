@@ -6,6 +6,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 const serviceAccount = require('./serviceAccountKey.json'); // Make sure this file exists
 
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -18,12 +19,15 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Root route
+const autocompleteRoute = require('./routes/autocomplete');
+app.use('/api/autocomplete', autocompleteRoute);
+
+
 app.get('/', (req, res) => {
   res.send('PlanIt backend is running!');
 });
 
-// Firebase config for frontend
+
 app.get('/api/firebase-config', (req, res) => {
   res.json({
     apiKey: process.env.FIREBASE_API_KEY,

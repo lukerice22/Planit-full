@@ -1,3 +1,4 @@
+
 /* ==== LANDING PAGE ==== */
 
 .hero,
@@ -1601,6 +1602,22 @@ html, body {
   animation: sweepBorder 0.1s forwards;
 }
 
+.top-bar-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0px;
+  z-index: 1000;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  transition: left 0.3s ease-in-out;
+}
+
+
+body.nav-collapsed .top-bar-wrapper {
+  left: -270px;
+}
+
 
 /* Side Bar animations */
 
@@ -1910,3 +1927,687 @@ html, body {
   object-fit: contain;
   opacity: 90%;
 }
+
+
+
+/* End sidebar */
+
+
+/* Search bar */
+
+
+.search-bar-container {
+  position: absolute;
+  top: 100px;
+  left: 370px;
+  z-index: 999;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  border: none;
+  font-family: "be vietnam pro";
+}
+
+.search-input {
+  width: 267px;
+  box-sizing: border-box;
+  padding: 8px;
+  padding-right: 40px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1rem;
+  background: white;
+  border: 1px solid rgb(194, 194, 194);
+  outline: none;
+  box-shadow: none;
+  border-radius: 15px;
+  font-family: "be vietnam pro";
+}
+
+.search-input:focus {
+  background-color: rgba(255, 255, 255, 0.817);
+  color: black;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+.suggestions-list {
+  list-style: none;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid rgb(194, 194, 194);
+  background-color: rgba(255, 255, 255, 0.571);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  width: 250px;
+  font-family: "be vietnam pro";
+}
+
+.search-bar-container:not(:focus-within) .suggestions-list {
+  display: none;
+}
+
+
+.suggestion-item {
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-radius: 5px;
+}
+
+.suggestion-item:hover {
+  background-color: #7070701e;
+}
+
+.pin-suggestion-icon {
+  width: 17px;
+  height: 17px;
+  margin-right: 15px;
+  vertical-align: top;
+}
+
+.suggestion-item strong {
+  font-weight: 600;
+  color: #222;
+}
+
+
+.search-input-wrapper {
+  position: relative;
+  width: 250px;
+}
+
+.search-icon-inside {
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: .7;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.search-icon-inside:hover {
+  opacity: 1;
+}
+
+
+/* End search bar */
+
+
+/* add pin button*/
+
+.add-pin-container {
+  position: absolute;
+  top: 100px;
+  left: 650px;
+  z-index: 999;
+  font-family: "be vietnam pro";
+}
+
+.add-pin-button {
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  border: 1px solid rgb(194, 194, 194);
+  background-color: white;
+  color: grey;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s ease;
+}
+
+.add-pin-button:hover {
+  background-color: rgba(240, 240, 240, 0.9);
+  color: #000000;
+}
+
+.pin-options-dropdown {
+  margin-top: 2px;
+  background-color: rgba(255, 255, 255, 0.584);
+  border: 1px solid rgb(194, 194, 194);
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 150px;
+}
+
+.pin-options-dropdown button {
+  background: none;
+  border: none;
+  font-family: "be vietnam pro";
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.pin-options-dropdown button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+
+/* Overlay that appears during manual pin mode */
+.manual-overlay {
+  position: fixed;
+  top: 80px; /* adjust if your top bar is taller */
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 80px);
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  pointer-events: none;
+}
+
+
+.manual-instruction {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffffcc;
+  color: #333;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  padding: 10px 20px;
+  border-radius: 8px;
+  z-index: 1000;
+  font-size: 1rem;
+  pointer-events: none;
+  animation: pulse 3.5s ease-in-out infinite;
+}
+
+/* Crosshair cursor for map */
+body.manual-mode {
+  cursor: crosshair;
+}
+
+/* Map gets an outline */
+body.manual-mode #map {
+  outline: 2px dashed rgba(255, 255, 255, 0.6);
+}
+
+/* Pulse animation */
+@keyframes pulse {
+  0% { transform: translateX(-50%) scale(1); opacity: 1; }
+  50% { transform: translateX(-50%) scale(1.05); opacity: 0.8; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* === Popup Buttons === */
+.leaflet-popup-content {
+  text-align: center;
+  font-family: 'Be Vietnam Pro', sans-serif;
+}
+
+.popup-btn {
+  display: inline-block;
+  background-color: #c61212;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.popup-btn:hover {
+  background-color: #b10909;
+}
+
+/* === END Popup Buttons === */
+
+
+/* === Pin Sidebar Wrapper === */
+.pin-sidebar-wrapper {
+  position: fixed;
+  top: 80px;
+  right: 0;
+  width: 350px;
+  height: calc(100vh - 80px);
+  background: rgba(255, 255, 255, 0.750);
+  backdrop-filter: blur(1px);
+  border-left: solid 2px rgb(255, 255, 255);
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.pin-sidebar-wrapper.open {
+  transform: translateX(0%);
+}
+
+/* prevent scrolling when locked */
+.pin-sidebar.lock-scroll {
+  overflow: hidden;
+}
+
+
+/* === Sidebar Container === */
+.pin-sidebar {
+  padding: 24px 20px 20px 20px;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  position: relative;
+}
+
+
+/* === Header & Title === */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+  padding-top: 10px;
+}
+
+.title-input {
+  text-align: center;
+  font-size: 1.3rem;
+  border: none;
+  border-bottom: 2px solid #414141;
+  background: transparent;
+  padding: 0px;
+  font-family: fantasy;
+  width: 100%;
+  padding-top: 30px;
+  outline: none;
+  text-decoration: none;
+  margin-top: 10px;
+}
+
+
+/* === Close Button === */
+/* generic */
+.close-btn {
+  cursor: pointer;
+  font-size: 1.5rem;
+  vertical-align: middle;
+}
+
+/* top-left override */
+.close-btn {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 1.6rem;
+  cursor: pointer;
+  color: #333;
+}
+
+
+/* === Settings Toggle & Icon === */
+.sidebar-settings-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+}
+
+/* nested toggle button */
+.sidebar-settings-toggle button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* nested toggle image */
+.sidebar-settings-toggle img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.sidebar-settings-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
+  position: absolute;
+  top: 0px;
+  right: 10px;
+}
+
+
+/* === Settings Panel === */
+
+.settings-panel {
+  padding: 16px;
+  font-family: "be vietnam pro";
+  max-height: calc(100vh - 80px);
+  height: auto;
+  overflow-y: auto;
+}
+
+
+/* header inside settings */
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: none;
+  border-top: 1px solid black;
+  margin-bottom: 20px;
+}
+
+/* back button (generic) */
+.back-btn {
+  border: none;
+  background: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #004aad;
+}
+
+/* back button inside settings-header */
+.settings-panel .settings-header .back-btn {
+  color: #004aad;
+  font-weight: 500;
+}
+
+/* section titles */
+.settings-panel h3 {
+  margin-top: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+
+/* === Settings Items === */
+.settings-panel .settings-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+/* labels for item rows */
+.settings-panel .settings-item label {
+  min-width: 80px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* color picker */
+.settings-panel .settings-item input[type="color"] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* buttons (Clear Data, Delete Pin, etc.) */
+.settings-panel .settings-item button {
+  flex-shrink: 0;
+  background-color: black;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.settings-panel .settings-item button:hover {
+  background-color: #1e1e1e;
+  transform: translateY(-1px);
+}
+
+
+/* confirmation container inside settings-item */
+.settings-item div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  background: transparent;  /* no container background */
+  border: none;             /* no container borders */
+  padding: 0;               /* no extra padding */
+}
+
+.settings-item div p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.settings-item div button {
+  background: none;       /* transparent button */
+  border: none;           /* no button border */
+  padding: 4px 8px;       /* compact hit area */
+  font-size: 0.85rem;     /* slightly smaller text */
+  min-width: 70px;        /* uniform width for both */
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+/* primary action (“Yes”) */
+.settings-item div button:first-of-type {
+  color: #ffffff;
+}
+
+/* secondary action (“Cancel”) */
+.settings-item div button:last-of-type {
+  color: #ffffff;
+}
+
+.settings-item div button:hover {
+  opacity: 0.7;
+}
+
+/* === Sidebar Sections === */
+.sidebar-section {
+  margin-top: 20px;
+}
+
+/* common styling for multiple sections */
+.sidebar-section.trip-details,
+.sidebar-section.planning,
+.sidebar-section.media,
+.sidebar-section.sharing {
+  border-bottom: solid 2px #000000;
+  padding-bottom: 10px;
+  padding-top: 20px;
+  margin-top: 0px;
+}
+
+
+/* --- Trip Details Section --- */
+.sidebar-section.trip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 0.95rem;
+}
+
+/* visited checkbox */
+.visited-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+}
+
+.visited-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #4CAF50; /* Green checkmark */
+  cursor: pointer;
+}
+
+/* override accent */
+.visited-checkbox input[type="checkbox"] {
+  accent-color: #28a745;  /* bright green when checked */
+}
+
+/* date picker */
+.date-picker {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-picker label {
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #444;
+}
+
+.date-picker input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background-color: #fdfdfd;
+  color: #333;
+}
+
+/* textarea */
+textarea {
+  width: 95%;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 4px;
+  resize: vertical;
+  font-family: "be vietnam pro";
+}
+
+/* action buttons */
+.ai-btn,
+.collab-btn {
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #f7f7f7;
+  cursor: pointer;
+}
+
+/* photo placeholder */
+.photo-placeholder {
+  height: 100px;
+  background: #efefef;
+  border: 1px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+
+/* === To-Do Input & Button === */
+.todo-input {
+  background-color: transparent;
+  flex: 1;
+  outline: none;
+  border: none;
+  border-bottom: 1px solid #848484;
+  padding: 6px 8px;
+  font-family: inherit;
+  box-shadow: none;
+}
+
+.add-task-btn {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background-color: #004aad;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-task-btn:hover {
+  background-color: #003a70;
+}
+
+
+/* === Save Section === */
+.sidebar-save {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.save-button {
+  background-color: #0077cc;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 119, 204, 0.2);
+}
+
+.save-button:hover {
+  background-color: #005fa3;
+  transform: translateY(-1px);
+}
+
+.save-button:disabled {
+  background-color: #b4b4b4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* saved notification */
+.saved-toast {
+  margin-top: 10px;
+  background-color: #e7f9ed;
+  color: #217c44;
+  border: 1px solid #a6e5b6;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  animation: fadein 0.3s ease;
+}
+
+
+/* === Animations === */
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* === END Pin Sidebar === */

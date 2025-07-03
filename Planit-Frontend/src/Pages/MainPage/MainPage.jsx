@@ -12,7 +12,7 @@ const MainPage = () => {
 
   useEffect(() => {
     const checkUser = async () => {
-      await initFirebase(); // ✅ Ensure Firebase is initialized
+      await initFirebase();
 
       const user = auth.currentUser;
 

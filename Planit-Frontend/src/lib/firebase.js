@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { BASE_URL } from './api';
 
@@ -14,6 +19,7 @@ export const initFirebase = async () => {
     const config = await res.json();
     app = initializeApp(config);
     auth = getAuth(app);
+    await setPersistence(auth, browserLocalPersistence);
     googleProvider = new GoogleAuthProvider();
     firestore = getFirestore(app);
   }

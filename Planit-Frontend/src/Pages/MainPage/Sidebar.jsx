@@ -11,17 +11,20 @@ import friendsSvg from '../../assets/circled-group-svgrepo-com.svg';
 import medalSvg from '../../assets/medal-svgrepo-com.svg';
 
 const Sidebar = () => {
-  const [collapsed, setCollapsed] = useState(false);
-
+  const [collapsed, setCollapsed] = useState(true);
   const handleToggle = () => {
     const sidebar = document.querySelector('.sidebar');
     sidebar.classList.add('collapsing');
 
     setTimeout(() => {
-      sidebar.classList.remove('collapsing');
-      setCollapsed(prev => !prev);
-    }, 300); // match animation duration
-  };
+    sidebar.classList.remove('collapsing');
+    setCollapsed(prev => {
+      const newState = !prev;
+      document.body.classList.toggle('nav-collapsed', newState); // <- This line is key
+      return newState;
+    });
+  }, 300);
+};
 
   return (
     <div className={`sidebar-wrapper ${collapsed ? 'collapsed' : ''}`} id="sidebar-wrapper">
