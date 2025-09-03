@@ -11,9 +11,6 @@
     "ios": {
       "bundleIdentifier": "com.yourcompany.planit",
       "supportsTablet": true,
-      "config": {
-        "googleMapsApiKey": "AIzaSyDbBWTWuToUp3ipegLVFF9dCfNKoA2DvJM"
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

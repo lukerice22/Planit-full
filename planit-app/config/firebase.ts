@@ -1,14 +1,17 @@
-// config/firebase.ts
-import { initializeApp } from 'firebase/app';
+// planit-app/src/lib/firebase.ts
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   // @ts-ignore
   initializeAuth,
+  // @ts-ignore
+  getAuth,
   // @ts-ignore
   getReactNativePersistence,
 } from 'firebase/auth/react-native';
 import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Read from Expo env (must be defined in planit-app/.env)
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -18,16 +21,14 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// ✅ Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Ensure singletons on fast refresh
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// ✅ Auth with persistent storage
-const auth = initializeAuth(app, {
+// IMPORTANT: only call initializeAuth once
+let auth = getApps().length ? getAuth() : initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-// ✅ Firestore DB
 const firestore = getFirestore(app);
 
-export { auth, firestore };
-export const db = getFirestore(app);
+export { app, auth, firestore };

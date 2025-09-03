@@ -1,11 +1,5 @@
 require('dotenv').config();
 
-console.log('[boot] cwd =', process.cwd());
-console.log('[boot] Places key present =', !!process.env.GOOGLE_PLACES_API_KEY);
-if (process.env.GOOGLE_PLACES_API_KEY) {
-  console.log('[boot] Places key prefix =', process.env.GOOGLE_PLACES_API_KEY.slice(0, 6) + '…');
-}
-
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
@@ -50,7 +44,6 @@ app.get('/api/maptiler-key', (req, res) => {
   const key = process.env.MAPTILER_API_KEY;
 
   if (!key) {
-    console.error('MapTiler key is undefined in env');
     return res.status(500).json({ error: 'MapTiler key missing' });
   }
 
@@ -71,11 +64,9 @@ app.get('/api/check-username', async (req, res) => {
     const available = snapshot.empty;
     res.status(200).json({ available });
   } catch (error) {
-    console.error('Error checking username:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
 });

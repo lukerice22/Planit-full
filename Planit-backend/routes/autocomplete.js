@@ -11,7 +11,6 @@ router.get('/', async (req, res) => {
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
-      console.error('[autocomplete] missing GOOGLE_PLACES_API_KEY');
       return res.status(500).json({ status: 'ERROR', error: 'missing_api_key' });
     }
 
@@ -21,12 +20,10 @@ router.get('/', async (req, res) => {
     const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params}`;
     const r = await fetch(url);
     const txt = await r.text();
-    console.log('[autocomplete] upstream status', r.status);
 
     let data; try { data = JSON.parse(txt); } catch { data = { parseError: true, txt }; }
     return res.status(r.ok ? 200 : r.status).json(data);
   } catch (e) {
-    console.error('autocomplete error', e);
     res.status(500).json({ status: 'ERROR', error: 'server_error' });
   }
 });
@@ -39,7 +36,6 @@ router.get('/details', async (req, res) => {
 
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
-      console.error('[details] missing GOOGLE_PLACES_API_KEY');
       return res.status(500).json({ status: 'ERROR', error: 'missing_api_key' });
     }
 
@@ -53,12 +49,10 @@ router.get('/details', async (req, res) => {
     const url = `https://maps.googleapis.com/maps/api/place/details/json?${params}`;
     const r = await fetch(url);
     const txt = await r.text();
-    console.log('[details] upstream status', r.status);
 
     let data; try { data = JSON.parse(txt); } catch { data = { parseError: true, txt }; }
     return res.status(r.ok ? 200 : r.status).json(data);
   } catch (e) {
-    console.error('details error', e);
     res.status(500).json({ status: 'ERROR', error: 'server_error' });
   }
 });
