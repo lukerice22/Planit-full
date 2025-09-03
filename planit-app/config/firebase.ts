@@ -1,17 +1,16 @@
 // planit-app/src/lib/firebase.ts
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { Platform } from 'react-native';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
-  // @ts-ignore
-  initializeAuth,
-  // @ts-ignore
   getAuth,
-  // @ts-ignore
+  initializeAuth,
+  Auth,
   getReactNativePersistence,
-} from 'firebase/auth/react-native';
-import { getFirestore } from 'firebase/firestore';
+} from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Read from Expo env (must be defined in planit-app/.env)
+// Read from Expo env (must be defined in .env and referenced with EXPO_PUBLIC_*)
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -21,14 +20,25 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
 };
 
-// Ensure singletons on fast refresh
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Ensure singletons on Fast Refresh
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// IMPORTANT: only call initializeAuth once
-let auth = getApps().length ? getAuth() : initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+let auth: Auth;
+if (Platform.OS === 'web') {
+  // Web: standard getAuth
+  auth = getAuth(app);
+} else {
+  // Native (iOS/Android): must initialize with RN persistence once.
+  // initializeAuth throws if called twice, so try it, then fall back to getAuth.
+  try {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch (e) {
+    auth = getAuth(app);
+  }
+}
 
-const firestore = getFirestore(app);
+const firestore: Firestore = getFirestore(app);
 
 export { app, auth, firestore };

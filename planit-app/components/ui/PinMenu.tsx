@@ -19,7 +19,6 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-// import PinIcon (adjust path if your folders differ)
 import PinIcon from '../PinIcon';
 
 export interface TagOption {
@@ -44,6 +43,8 @@ export interface PinData {
   tags?: TagOption[];
   notes?: string;
   todos?: TodoItem[];
+  visited?: boolean;
+  status?: 'visited' | 'wishlist';
 }
 
 export interface PinMenuProps {
@@ -71,10 +72,8 @@ const COLORS = {
   cardBg: '#FFFFFF',
 };
 
-// 8-color palette
 const MARKER_PALETTE = ['#C41E3A','#FF6600','#FFEA00','#4CBB17','#3BC3F5','#9B59B6','#000000','#FFFFFF'];
 
-// shapes available to pick
 const SHAPES = ['default', 'flag', 'thin'] as const;
 type ShapeOption = typeof SHAPES[number];
 
@@ -113,7 +112,7 @@ const PriorityStars: React.FC<{ value: number; onChange: (n: number) => void }> 
   return (
     <View style={styles.priorityContainer}>
       <View style={styles.starsRow}>
-        {[1,2,3,4,5].map((star, index) => {
+        {[1,2,3,4,5].map((star: number, index: number) => {
           const isActive = star <= value;
           return (
             <TouchableOpacity
@@ -177,9 +176,11 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
   const sheetRef = useRef<BottomSheet>(null);
   const fadeIn = useRef(new Animated.Value(0)).current;
 
-  const [name, setName] = useState(pin.name ?? '');
-  const [date, setDate] = useState<Date | undefined>(pin.createdAt);
-  const [visited, setVisited] = useState<boolean>(false);
+  // normalize initial visited/status
+  const initialVisited: boolean = typeof pin.visited === 'boolean' ? pin.visited : pin.status === 'visited';
+  const [name, setName] = useState<string>(pin.name ?? '');
+  const [visited, setVisited] = useState<boolean>(initialVisited);
+  const [date, setDate] = useState<Date | undefined>(initialVisited ? (pin.createdAt ?? new Date()) : pin.createdAt);
   const [priority, setPriority] = useState<number>(pin.priority ?? 0);
   const [color, setColor] = useState<string>(pin.color ?? MARKER_PALETTE[0]);
   const [shape, setShape] = useState<ShapeOption>((pin.shape as ShapeOption) ?? 'default');
@@ -192,11 +193,23 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
     tags: false,
     todos: false,
   });
+  const [sheetIndex, setSheetIndex] = useState<number>(1);
 
-  const [sheetIndex, setSheetIndex] = useState(1);
+  // keep local state in sync if a different pin is opened
+  useEffect(() => {
+    const v = typeof pin.visited === 'boolean' ? pin.visited : pin.status === 'visited';
+    setName(pin.name ?? '');
+    setVisited(v);
+    setDate(v ? (pin.createdAt ?? new Date()) : pin.createdAt);
+    setPriority(pin.priority ?? 0);
+    setColor(pin.color ?? MARKER_PALETTE[0]);
+    setShape((pin.shape as ShapeOption) ?? 'default');
+    setTags(pin.tags ?? []);
+    setNotes(pin.notes ?? '');
+    setTodos(pin.todos ?? []);
+  }, [pin.id]);
 
   const saveTimeoutRef = useRef<number | null>(null);
-
   const snapPoints = useMemo(() => ['35%', '60%', '100%'], []);
 
   useEffect(() => {
@@ -204,18 +217,12 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
   }, [fadeIn]);
 
   const debouncedSave = useCallback((partial: Partial<PinData>) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      onSave(partial);
-    }, 800) as unknown as number;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => onSave(partial), 800) as unknown as number;
   }, [onSave]);
 
   const immediateSave = useCallback((partial: Partial<PinData>) => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     onSave(partial);
   }, [onSave]);
 
@@ -224,16 +231,18 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
     debouncedSave({ name: text });
   }, [debouncedSave]);
 
+  // write visited + status + createdAt consistently
   const handleToggleVisited = useCallback((value: boolean) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setVisited(value);
+
     if (value) {
       const d = date ?? new Date();
       setDate(d);
-      immediateSave({ createdAt: d });
+      immediateSave({ visited: true, status: 'visited', createdAt: d });
     } else {
       setDate(undefined);
-      immediateSave({ createdAt: undefined });
+      immediateSave({ visited: false, status: 'wishlist', createdAt: undefined });
     }
   }, [date, immediateSave]);
 
@@ -241,7 +250,7 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
     if (e.type === 'set' && selected) {
       setDate(selected);
       setVisited(true);
-      immediateSave({ createdAt: selected });
+      immediateSave({ visited: true, status: 'visited', createdAt: selected });
     }
     setShowDatePicker(false);
   }, [immediateSave]);
@@ -255,52 +264,42 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setColor(c);
     immediateSave({ color: c });
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [immediateSave]);
 
   const handleSetShape = useCallback((s: ShapeOption) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
     setShape(s);
     immediateSave({ shape: s });
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [immediateSave]);
 
   const toggleTag = useCallback((t: TagOption) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const exists = tags.find(x => x.label === t.label);
-    const next = exists ? tags.filter(x => x.label !== t.label) : [...tags, t];
+    const exists = tags.find((x: TagOption) => x.label === t.label);
+    const next = exists ? tags.filter((x: TagOption) => x.label !== t.label) : [...tags, t];
     setTags(next);
     immediateSave({ tags: next });
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [tags, immediateSave]);
 
   const addTodo = useCallback(() => {
     const trimmed = newTodo.trim();
     if (!trimmed) return;
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const updated = [...todos, { text: trimmed, done: false }];
+    const updated: TodoItem[] = [...todos, { text: trimmed, done: false }];
     setTodos(updated);
     setNewTodo('');
     immediateSave({ todos: updated });
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [newTodo, todos, immediateSave]);
 
   const toggleTodo = useCallback((index: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const updated = todos.map((t, i) => i === index ? { ...t, done: !t.done } : t);
+    const updated: TodoItem[] = todos.map((t: TodoItem, i: number) => i === index ? { ...t, done: !t.done } : t);
     setTodos(updated);
     immediateSave({ todos: updated });
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [todos, immediateSave]);
 
   const openDirections = useCallback(() => {
@@ -326,9 +325,7 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
           style: 'destructive',
           onPress: () => {
             onDelete();
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            }
+            if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
           }
         }
       ]
@@ -347,9 +344,7 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
       snapPoints={snapPoints}
       enablePanDownToClose
       onClose={onClose}
-      onChange={(i) => {
-        setSheetIndex(i);
-      }}
+      onChange={(i: number) => setSheetIndex(i)}
       handleIndicatorStyle={styles.handle}
       backgroundStyle={styles.sheetBackground}
       bottomInset={NAV_HEIGHT + insets.bottom}
@@ -365,14 +360,16 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
         keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled
-        scrollEnabled={sheetIndex === 2}
       >
         <Animated.View style={{ opacity: fadeIn }}>
           {/* Header */}
           <View style={styles.header}>
             <TextInput
               value={name}
-              onChangeText={handleChangeName}
+              onChangeText={(text: string) => {
+                setName(text);
+                debouncedSave({ name: text });
+              }}
               placeholder="Name this place..."
               placeholderTextColor={COLORS.muted}
               style={styles.titleInput}
@@ -433,23 +430,21 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
           {/* Priority */}
           <Text style={styles.sectionTitle}>Priority</Text>
           <View style={styles.card}>
-            <PriorityStars value={priority} onChange={setPriority} />
+            <PriorityStars value={priority} onChange={(n: number) => setPriority(n)} />
           </View>
 
           {/* Appearance */}
           <Text style={styles.sectionTitle}>Appearance</Text>
           <View style={styles.card}>
-            {/* Preview */}
             <Text style={styles.cardTitle}>Preview</Text>
             <View style={styles.previewRow}>
               <PinIcon shape={shape} color={color} size={36} />
               <Text style={styles.previewLabel}>{shape} • {color.toUpperCase()}</Text>
             </View>
 
-            {/* Shape picker */}
             <Text style={[styles.cardTitle, { marginTop: 12 }]}>Pin Shape</Text>
             <View style={styles.shapeGrid}>
-              {SHAPES.map((s) => {
+              {SHAPES.map((s: ShapeOption) => {
                 const selected = s === shape;
                 return (
                   <TouchableOpacity
@@ -470,10 +465,9 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
               })}
             </View>
 
-            {/* Color picker */}
             <Text style={[styles.cardTitle, { marginTop: 12 }]}>Pin Color</Text>
             <View style={styles.colorGrid}>
-              {MARKER_PALETTE.map((c) => {
+              {MARKER_PALETTE.map((c: string) => {
                 const selected = c === color;
                 const isWhite = c.toLowerCase() === '#ffffff' || c.toLowerCase() === 'white';
                 return (
@@ -505,17 +499,17 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
             onPress={() => toggleSection('tags')}
             rightElement={
               <Ionicons
-                name={expandedSections.tags ? 'chevron-up' : 'chevron-down'}
+                name={expandedSections['tags'] ? 'chevron-up' : 'chevron-down'}
                 size={20}
                 color={COLORS.muted}
               />
             }
           />
 
-          {expandedSections.tags && (
+          {expandedSections['tags'] && (
             <View style={styles.tagsGrid}>
-              {TAG_OPTIONS.map(t => {
-                const selected = !!tags.find(x => x.label === t.label);
+              {TAG_OPTIONS.map((t: TagOption) => {
+                const selected = !!tags.find((x: TagOption) => x.label === t.label);
                 return (
                   <TouchableOpacity
                     key={t.label}
@@ -545,7 +539,7 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
           <View style={styles.card}>
             <TextInput
               value={notes}
-              onChangeText={(text) => {
+              onChangeText={(text: string) => {
                 setNotes(text);
                 debouncedSave({ notes: text });
               }}
@@ -562,20 +556,20 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
           <ActionCard
             icon={<Ionicons name="list" size={20} color={COLORS.primary} />}
             title="Tasks"
-            subtitle={todos.length > 0 ? `${todos.filter(t => !t.done).length} remaining` : 'Add tasks'}
+            subtitle={todos.length > 0 ? `${todos.filter((t: TodoItem) => !t.done).length} remaining` : 'Add tasks'}
             onPress={() => toggleSection('todos')}
             rightElement={
               <Ionicons
-                name={expandedSections.todos ? 'chevron-up' : 'chevron-down'}
+                name={expandedSections['todos'] ? 'chevron-up' : 'chevron-down'}
                 size={20}
                 color={COLORS.muted}
               />
             }
           />
 
-          {expandedSections.todos && (
+          {expandedSections['todos'] && (
             <View style={styles.card}>
-              {todos.map((todo, i) => (
+              {todos.map((todo: TodoItem, i: number) => (
                 <View key={`${todo.text}-${i}`} style={styles.todoItem}>
                   <TouchableOpacity onPress={() => toggleTodo(i)} style={styles.todoCheckbox}>
                     <Ionicons
@@ -593,7 +587,7 @@ const PinMenu: React.FC<PinMenuProps> = ({ pin, onClose, onSave, onDelete }) => 
               <View style={styles.addTodoContainer}>
                 <TextInput
                   value={newTodo}
-                  onChangeText={setNewTodo}
+                  onChangeText={(t: string) => setNewTodo(t)}
                   placeholder="Add a new task..."
                   placeholderTextColor={COLORS.muted}
                   onSubmitEditing={addTodo}
@@ -744,7 +738,6 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
     textAlign: 'center',
   },
-  // appearance
   previewRow: {
     flexDirection: 'row',
     alignItems: 'center',

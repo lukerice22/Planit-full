@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Platform, Animated } from 'react-native';
 import MapView, { Marker, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import Nav from '@/components/Nav';
 import AuthModal from '@/components/AuthModal';
 import { auth, firestore } from '@/config/firebase';
@@ -21,7 +23,10 @@ import customMapStyle from '@/constants/Mapstyle';
 import SearchBar, { SearchBarRef } from '@/components/SearchBar';
 import PinMenu, { PinData } from '@/components/ui/PinMenu';
 import AddPinChooser, { AddPinChooserRef } from '@/components/ui/AddPinChooser';
-import PinIcon from "../components/PinIcon";
+import PinIcon from '../components/PinIcon';
+
+// 🔹 Pill toggle
+import PinToggle, { PinFilter } from '@/components/PinToggle'; // <- change path if needed
 
 interface PlaceItem {
   place_id: string;
@@ -32,21 +37,20 @@ interface PlaceItem {
 
 const NAV_HEIGHT = 72;
 const BANNER_EXTRA_OFFSET = 64;
-
-// 👇 Cardinal Red for new pins
 const DEFAULT_PIN_COLOR = '#C41E3A';
 
-// helper so pins sit nicely; shift flag slightly inland (to the right)
 const getAnchor = (shape?: string) => {
   switch (shape) {
     case 'flag':
-      return { x: 0.42, y: 1 }; // tweak 0.40–0.45 to taste
+      return { x: 0.42, y: 1 };
     default:
       return { x: 0.5, y: 1 };
   }
 };
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+
   const [user, setUser] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const modalShownThisSession = useRef(false);
@@ -57,6 +61,9 @@ export default function HomeScreen() {
   const [pins, setPins] = useState<PinData[]>([]);
   const [selectedPin, setSelectedPin] = useState<PinData | null>(null);
 
+  // 🔹 Filter state for pill
+  const [filter, setFilter] = useState<PinFilter>('all');
+
   const [locationPermission, setLocationPermission] = useState(false);
   const mapRef = useRef<MapView | null>(null);
 
@@ -66,7 +73,7 @@ export default function HomeScreen() {
   const chooserRef = useRef<AddPinChooserRef>(null);
   const searchRef = useRef<SearchBarRef>(null);
 
-  // 🔄 force RN Maps to repaint custom marker views after updates
+  // Force RN Maps to repaint custom markers after updates
   const [refreshMarkers, setRefreshMarkers] = useState(false);
   const nudgeMarkers = useCallback(() => {
     setRefreshMarkers(true);
@@ -112,8 +119,15 @@ export default function HomeScreen() {
         return;
       }
       const snap = await getDocs(collection(firestore, 'users', user.uid, 'pins'));
+
       const loaded: PinData[] = snap.docs.map((d) => {
         const data = d.data() as any;
+
+        // 🔹 Normalize visited/status for older docs
+        const visitedNorm: boolean =
+          typeof data.visited === 'boolean' ? data.visited : data.status === 'visited';
+        const statusNorm: 'visited' | 'wishlist' = visitedNorm ? 'visited' : 'wishlist';
+
         return {
           id: d.id,
           name: data.name,
@@ -126,8 +140,11 @@ export default function HomeScreen() {
           tags: data.tags ?? [],
           notes: data.notes ?? '',
           todos: data.todos ?? [],
-        };
+          visited: visitedNorm,
+          status: statusNorm,
+        } as PinData;
       });
+
       setPins(loaded);
     };
     loadPins();
@@ -154,23 +171,26 @@ export default function HomeScreen() {
       return;
     }
 
-    const basePin: Omit<PinData, 'id'> = {
+    // New pins start as wishlist/ not visited
+    const basePin: Omit<PinData, 'id'> & { visited?: boolean; status?: 'visited' | 'wishlist' } = {
       name: selectedPlace.description,
       lat: selectedPlace.lat,
       lng: selectedPlace.lng,
       createdAt: new Date(),
       priority: 0,
-      color: DEFAULT_PIN_COLOR, // 👈 Cardinal Red
-      shape: 'default',         // 👈 default shape on save
+      color: DEFAULT_PIN_COLOR,
+      shape: 'default',
       tags: [],
       notes: '',
       todos: [],
+      visited: false,
+      status: 'wishlist',
     };
 
     try {
       const ref = doc(collection(firestore, 'users', user.uid, 'pins'));
       await setDoc(ref, { ...basePin, createdAt: serverTimestamp() });
-      setPins((prev) => [...prev, { ...basePin, id: ref.id }]);
+      setPins((prev) => [...prev, { ...basePin, id: ref.id } as PinData]);
       nudgeMarkers();
     } catch (err) {
       console.error('Error saving pin:', err);
@@ -180,7 +200,7 @@ export default function HomeScreen() {
   }, [selectedPlace, user, nudgeMarkers]);
 
   const handleSavePinPartial = useCallback(
-    async (updated: Partial<PinData>) => {
+    async (updated: Partial<PinData & { visited?: boolean; status?: 'visited' | 'wishlist' }>) => {
       if (!user?.uid || !selectedPin?.id) return;
 
       const ref = doc(firestore, 'users', user.uid, 'pins', selectedPin.id);
@@ -196,6 +216,7 @@ export default function HomeScreen() {
         await setDoc(ref, payload as any, { merge: true });
       }
 
+      // reflect changes locally
       setPins((prev) => prev.map((p) => (p.id === selectedPin.id ? { ...p, ...updated } : p)));
       setSelectedPin((prev) => (prev ? { ...prev, ...updated } as PinData : prev));
       nudgeMarkers();
@@ -235,10 +256,7 @@ export default function HomeScreen() {
   };
 
   const handleExpandedChange = (expanded: boolean) => setNavExpanded(expanded);
-
-  const openChooser = () => {
-    requestAnimationFrame(() => chooserRef.current?.open?.());
-  };
+  const openChooser = () => requestAnimationFrame(() => chooserRef.current?.open?.());
 
   const handleChooserAddBySearch = () => {
     setPlacingManual(false);
@@ -277,6 +295,10 @@ export default function HomeScreen() {
           { duration: 600 }
         );
 
+        const visitedNorm: boolean =
+          typeof data.visited === 'boolean' ? data.visited : data.status === 'visited';
+        const statusNorm: 'visited' | 'wishlist' = visitedNorm ? 'visited' : 'wishlist';
+
         const pinForMenu: PinData = {
           id: pinId,
           name: data?.name ?? 'Pinned Place',
@@ -289,6 +311,8 @@ export default function HomeScreen() {
           tags: data?.tags ?? [],
           notes: data?.notes ?? '',
           todos: data?.todos ?? [],
+          visited: visitedNorm,
+          status: statusNorm,
         };
         setSelectedPlace(null);
         setSelectedPin(pinForMenu);
@@ -310,6 +334,13 @@ export default function HomeScreen() {
     return () => clearTimeout(t);
   }, [focusPinId, centerOnPin, router]);
 
+  // 🔹 FINAL: the filter you asked for
+  const filteredPins = useMemo(() => {
+    if (filter === 'all') return pins;
+    if (filter === 'visited') return pins.filter((p: any) => p.visited === true || p.status === 'visited');
+    return pins.filter((p: any) => p.visited === false || p.status === 'wishlist');
+  }, [pins, filter]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -324,7 +355,7 @@ export default function HomeScreen() {
         pitchEnabled={false}
         onPress={handleMapPress}
       >
-        {/* Temporary dropped/selected place preview — now DEFAULT shape & Cardinal Red */}
+        {/* Temporary dropped/selected place preview */}
         {selectedPlace?.lat && selectedPlace.lng && (
           <Marker
             coordinate={{ latitude: selectedPlace.lat, longitude: selectedPlace.lng }}
@@ -335,8 +366,8 @@ export default function HomeScreen() {
           </Marker>
         )}
 
-        {/* Saved pins */}
-        {pins.map((pin) => (
+        {/* Render FILTERED pins */}
+        {filteredPins.map((pin: any) => (
           <Marker
             key={`${pin.id}-${pin.shape}-${pin.color}`}
             coordinate={{ latitude: pin.lat, longitude: pin.lng }}
@@ -357,13 +388,18 @@ export default function HomeScreen() {
         ))}
       </MapView>
 
+      {/* 🔹 Pill toggle just above the nav bar */}
+      <View style={[styles.pillWrap, { bottom: NAV_HEIGHT + insets.bottom + 16 }]}>
+        <PinToggle value={filter} onChange={setFilter} />
+      </View>
+
       {/* SearchBar */}
       <View
         style={[
           styles.searchContainer,
-          overlaysOpen ? styles.searchUnder : styles.searchOver,
+          (isMenuOpen || navExpanded) ? styles.searchUnder : styles.searchOver,
         ]}
-        pointerEvents={overlaysOpen ? 'none' : 'auto'}
+        pointerEvents={(isMenuOpen || navExpanded) ? 'none' : 'auto'}
       >
         <SearchBar ref={searchRef} onPlaceSelect={handlePlaceSelect} />
       </View>
@@ -378,7 +414,7 @@ export default function HomeScreen() {
         <AddPinBanner onConfirm={confirmPin} onCancel={() => setSelectedPlace(null)} />
       ) : null}
 
-      {/* PinMenu */}
+      {/* Pin Menu */}
       {selectedPin ? (
         <View style={styles.sheetHost} pointerEvents="auto">
           <PinMenu
@@ -437,14 +473,25 @@ const AddPinBanner: React.FC<{ onConfirm: () => void; onCancel: () => void }> = 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
 
+  // Search at top
   searchContainer: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 20 : 10,
+    top: Platform.OS === 'ios' ? 16 : 10,
     left: 20,
     right: 20,
   },
-  searchOver: { zIndex: 2 },
+  searchOver: { zIndex: 8 },
   searchUnder: { zIndex: 0 },
+
+  // Pill above nav
+  pillWrap: {
+    position: 'absolute',
+    paddingBottom: 20,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 0,
+  },
 
   sheetHost: {
     ...StyleSheet.absoluteFillObject,
@@ -455,7 +502,7 @@ const styles = StyleSheet.create({
 
   manualHint: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 70 : 50,
+    top: Platform.OS === 'ios' ? 110 : 95,
     left: 20, right: 20,
     backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: 10,
@@ -471,10 +518,7 @@ const styles = StyleSheet.create({
     bottom: 16 + NAV_HEIGHT + BANNER_EXTRA_OFFSET,
     zIndex: 6,
   },
-  bannerCancelText: {
-  color: '#333',
-  fontWeight: '600',
-},
+  bannerCancelText: { color: '#333', fontWeight: '600' },
   bannerInner: {
     backgroundColor: 'rgba(255,255,255,0.98)',
     borderRadius: 14,
