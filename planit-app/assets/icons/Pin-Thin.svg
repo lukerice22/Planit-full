@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Outer pin path (scaled up, always black) -->
+  <path 
+    d="M45 50 A25 25 0 0 1 50 0 A25 25 0 0 1 55 50 V100 A5 5 0 0 1 45 100 V50 Z"
+    fill="#000000"
+  />
+  <!-- Inner circle (hollow) -->
+  <circle cx="50" cy="25" r="15" />
+</svg>

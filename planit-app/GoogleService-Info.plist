@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>207239909657-ul42rae1egj7ub24a9nn0drohf30vj3h.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.207239909657-ul42rae1egj7ub24a9nn0drohf30vj3h</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAY2A1xiGxUBrh9fSJAj2OYlRGflGxuJ_U</string>
+	<key>GCM_SENDER_ID</key>
+	<string>207239909657</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.yourcompany.planit</string>
+	<key>PROJECT_ID</key>
+	<string>planit-bafee</string>
+	<key>STORAGE_BUCKET</key>
+	<string>planit-bafee.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:207239909657:ios:442cd6fd26f0a6643a7588</string>
+</dict>
+</plist>

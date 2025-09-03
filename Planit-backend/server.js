@@ -1,5 +1,11 @@
 require('dotenv').config();
 
+console.log('[boot] cwd =', process.cwd());
+console.log('[boot] Places key present =', !!process.env.GOOGLE_PLACES_API_KEY);
+if (process.env.GOOGLE_PLACES_API_KEY) {
+  console.log('[boot] Places key prefix =', process.env.GOOGLE_PLACES_API_KEY.slice(0, 6) + '…');
+}
+
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');

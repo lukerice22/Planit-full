@@ -1,3 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ANIMATIONS */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite ease-out;
+  transform: translateX(-100%);
+  z-index: 0;
+}
 
 /* ==== LANDING PAGE ==== */
 
@@ -1507,7 +1539,7 @@ html, body {
   position: absolute;
   top: 73px;
   left: 336px; 
-  z-index: 999;
+  z-index: 20;
   font-size: 30px;
   cursor: pointer;
   transition: left 0.3s ease;
@@ -1940,7 +1972,7 @@ body.nav-collapsed .top-bar-wrapper {
   position: absolute;
   top: 100px;
   left: 370px;
-  z-index: 999;
+  z-index: 10;
   background: transparent;
   padding: 0;
   margin: 0;
@@ -2049,7 +2081,7 @@ body.nav-collapsed .top-bar-wrapper {
   position: absolute;
   top: 100px;
   left: 650px;
-  z-index: 999;
+  z-index: 20;
   font-family: "be vietnam pro";
 }
 
@@ -2127,7 +2159,7 @@ body.nav-collapsed .top-bar-wrapper {
   font-family: 'Be Vietnam Pro', sans-serif;
   padding: 10px 20px;
   border-radius: 8px;
-  z-index: 1000;
+  z-index: 99;
   font-size: 1rem;
   pointer-events: none;
   animation: pulse 3.5s ease-in-out infinite;
